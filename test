@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mindfulness Wordle Game</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: url('https://images.unsplash.com/photo-1506744038136-46273834b3fb') no-repeat center center fixed;
+      background-size: cover;
+      color: #fff;
+      text-align: center;
+      padding: 20px;
+    }
+
+    h1 {
+      font-size: 2em;
+      margin-bottom: 10px;
+    }
+
+    #wordle-container {
+      display: flex;
+      justify-content: center;
+      margin: 20px 0;
+    }
+
+    .letter-box {
+      width: 50px;
+      height: 50px;
+      margin: 5px;
+      font-size: 2em;
+      text-transform: uppercase;
+      background-color: rgba(255, 255, 255, 0.2);
+      border: 2px solid #fff;
+      color: #fff;
+    }
+
+    #message {
+      font-size: 1.2em;
+      margin-top: 20px;
+    }
+
+    #reset-btn {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 1em;
+      background-color: #4CAF50;
+      border: none;
+      color: white;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>🌿 Mindfulness Wordle Game</h1>
+  <div id="wordle-container"></div>
+  <input type="text" id="guess-input" maxlength="5" placeholder="Enter your guess" />
+  <button onclick="checkGuess()">Submit</button>
+  <div id="message"></div>
+  <button id="reset-btn" onclick="resetGame()">🔄 Reset</button>
+  <canvas id="confetti"></canvas>
+
+  <script>
+    const words = [
+      "norms", "style", "buddy", "check", "space", "coach", "voice",
+      "think", "share", "break", "clear", "helps", "trust", "human"
+    ];
+    let targetWord = words[Math.floor(Math.random() * words.length)].toLowerCase();
+    const container = document.getElementById("wordle-container");
+    const message = document.getElementById("message");
+    const input = document.getElementById("guess-input");
+
+    function renderBoxes(word) {
+      container.innerHTML = "";
+      for (let i = 0; i < word.length; i++) {
+        const box = document.createElement("div");
+        box.className = "letter-box";
+        box.textContent = "_";
+        container.appendChild(box);
+      }
+    }
+
+    function checkGuess() {
+      const guess = input.value.toLowerCase();
+      if (guess.length !== targetWord.length) {
+        message.textContent = "Please enter a " + targetWord.length + "-letter word.";
+        return;
+      }
+
+      const boxes = document.querySelectorAll(".letter-box");
+      for (let i = 0; i < targetWord.length; i++) {
+        boxes[i].textContent = guess[i];
+        boxes[i].style.backgroundColor = guess[i] === targetWord[i] ? "#4CAF50" : "#f44336";
+      }
+
+      if (guess === targetWord) {
+        message.textContent = "You did it! 🌟";
+        launchConfetti();
+      } else {
+        message.textContent = "Try again!";
+      }
+    }
+
+    function resetGame() {
+      targetWord = words[Math.floor(Math.random() * words.length)].toLowerCase();
+      renderBoxes(targetWord);
+      input.value = "";
+      message.textContent = "";
+    }
+
+    function launchConfetti() {
+      const canvas = document.getElementById("confetti");
+      const ctx = canvas.getContext("2d");
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const confetti = Array.from({ length: 100 }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 6 + 4,
+        d: Math.random() * 10 + 5,
+        color: `hsl(${Math.random() * 360}, 100%, 50%)`,
+      }));
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        confetti.forEach(p => {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fillStyle = p.color;
+          ctx.fill();
+        });
+        update();
+      }
+
+      function update() {
+        confetti.forEach(p => {
+          p.y += p.d;
+          if (p.y > canvas.height) {
+            p.y = 0;
+            p.x = Math.random() * canvas.width;
+          }
+        });
+      }
+
+      setInterval(draw, 30);
+    }
+
+    renderBoxes(targetWord);
+  </script>
+</body>
+</html>
