@@ -21,19 +21,22 @@
 
     #wordle-container {
       display: flex;
-      justify-content: center;
+      flex-direction: column;
+      align-items: center;
       margin: 20px 0;
     }
 
     .letter-box {
-      width: 50px;
-      height: 50px;
+      width:  height: 50px;
       margin: 5px;
       font-size: 2em;
       text-transform: uppercase;
       background-color: rgba(255, 255, 255, 0.2);
       border: 2px solid #fff;
       color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     #message {
@@ -70,145 +73,147 @@
   <canvas id="confetti"></canvas>
 
   <script>
-   const words = [
-  "teams", "norms", "style", "buddy", "check",
-  "space", "coach", "voice", "think", "share",
-  "break", "clear", "helps", "trust", "human"
-];
-const maxGuesses = 5;
-let targetWord = words[Math.floor(Math.random() * words.length)].toLowerCase();
-let guesses = [];
-let gameOver = false;
+    const words = [
+      "teams", "norms", "style", "buddy", "check",
+      "space", "coach", "voice", "think", "share",
+      "break", "clear", "helps", "trust", "human"
+    ];
+    const maxGuesses = 5;
+    let targetWord = words[Math.floor(Math.random() * words.length)].toLowerCase();
+    let guesses = [];
+    let gameOver = false;
 
-const container = document.getElementById("wordle-container");
-const message = document.getElementById("message");
-const input = document.getElementById("guess-input");
+    const container = document.getElementById("wordle-container");
+    const message = document.getElementById("message");
+    const input = document.getElementById("guess-input");
 
-function renderBoxes() {
-  container.innerHTML = "";
-  for (let i = 0; i < maxGuesses; i++) {
-    const row = document.createElement("div");
-    row.style.display = "flex";
-    row.style.justifyContent = "center";
-    for (let j = 0; j < targetWord.length; j++) {
-      const box = document.createElement("div");
-      box.className = "letter-box";
-      if (guesses[i]) {
-        box.textContent = guesses[i][j].letter.toUpperCase();
-        box.style.backgroundColor = guesses[i][j].color;
+    function renderBoxes() {
+      container.innerHTML = "";
+      for (let i = 0; i < maxGuesses; i++) {
+        const row = document.createElement("div");
+        row.style.display = "flex";
+        row.style.justifyContent = "center";
+        for (let j = 0; j < targetWord.length; j++) {
+          const box = document.createElement("div");
+          box.className = "letter-box";
+          if (guesses[i]) {
+            box.textContent = guesses[i][j].letter.toUpperCase();
+            box.style.backgroundColor = guesses[i][j].color;
+          } else {
+            box.textContent = "_";
+            box.style.backgroundColor = "rgba(255,255,255,0.2)";
+          }
+          row.appendChild(box);
+        }
+        container.appendChild(row);
+      }
+    }
+
+    function getBoxColors(guess) {
+      const result = [];
+      const used = Array(targetWord.length).fill(false);
+
+      for (let i = 0; i < targetWord.length; i++) {
+        if (guess[i] === targetWord[i]) {
+          result[i] = { letter: guess[i], color: "#4CAF50" };
+          used[i] = true;
+        } else {
+          result[i] = { letter: guess[i], color: "#f44336" };
+        }
+      }
+
+      for (let i = 0; i < targetWord.length; i++) {
+        if (result[i].color === "#4CAF50") continue;
+        for (let j = 0; j < targetWord.length; j++) {
+          if (!used[j] && guess[i] === targetWord[j]) {
+            result[i].color = "#FFD600";
+            used[j] = true;
+            break;
+          }
+        }
+      }
+
+      return result;
+    }
+
+    function checkGuess() {
+      if (gameOver) return;
+      const guess = input.value.toLowerCase();
+      if (guess.length !== targetWord.length) {
+        message.textContent = `Please enter a ${targetWord.length}-letter word.`;
+        return;
+      }
+      if (guesses.length >= maxGuesses) {
+        message.textContent = "No more guesses left!";
+        return;
+      }
+
+      const row = getBoxColors(guess);
+      guesses.push(row);
+      renderBoxes();
+      input.value = "";
+
+      if (guess === targetWord) {
+        message.textContent = "You did it! 🌟";
+        gameOver = true;
+        launchConfetti();
+      } else if (guesses.length >= maxGuesses) {
+        message.textContent = `Out of guesses! The word was: ${targetWord.toUpperCase()}`;
+        gameOver = true;
       } else {
-        box.textContent = "_";
-        box.style.backgroundColor = "rgba(255,255,255,0.2)";
-      }
-      row.appendChild(box);
-    }
-    container.appendChild(row);
-  }
-}
-
-function getBoxColors(guess) {
-  // First make everything red
-  const result = [];
-  const used = Array(targetWord.length).fill(false);
-
-  // First pass: green
-  for (let i = 0; i < targetWord.length; i++) {
-    if (guess[i] === targetWord[i]) {
-      result[i] = { letter: guess[i], color: "#4CAF50" }; // Green
-      used[i] = true;
-    } else {
-      result[i] = { letter: guess[i], color: "#f44336" }; // Red (may change to yellow)
-    }
-  }
-  // Second pass: yellow
-  for (let i = 0; i < targetWord.length; i++) {
-    if (result[i].color === "#4CAF50") continue;
-    for (let j = 0; j < targetWord.length; j++) {
-      if (!used[j] && guess[i] === targetWord[j]) {
-        result[i].color = "#FFD600"; // Yellow
-        used[j] = true;
-        break;
+        message.textContent = "Try again!";
       }
     }
-  }
-  return result;
-}
 
-function checkGuess() {
-  if (gameOver) return;
-  const guess = input.value.toLowerCase();
-  if (guess.length !== targetWord.length) {
-    message.textContent = "Please enter a " + targetWord.length + "-letter word.";
-    return;
-  }
-  if (guesses.length >= maxGuesses) {
-    message.textContent = "No more guesses left!";
-    return;
-  }
-  const row = getBoxColors(guess);
-  guesses.push(row);
-  renderBoxes();
-  input.value = "";
-  if (guess === targetWord) {
-    message.textContent = "You did it! 🌟";
-    gameOver = true;
-    launchConfetti();
-  } else if (guesses.length >= maxGuesses) {
-    message.textContent = "Out of guesses! The word was: " + targetWord.toUpperCase();
-    gameOver = true;
-  } else {
-    message.textContent = "Try again!";
-  }
-}
+    function resetGame() {
+      targetWord = words[Math.floor(Math.random() * words.length)].toLowerCase();
+      guesses = [];
+      gameOver = false;
+      renderBoxes();
+      input.value = "";
+      message.textContent = "";
+    }
 
-function resetGame() {
-  targetWord = words[Math.floor(Math.random() * words.length)].toLowerCase();
-  guesses = [];
-  gameOver = false;
-  renderBoxes();
-  input.value = "";
-  message.textContent = "";
-}
+    function launchConfetti() {
+      const canvas = document.getElementById("confetti");
+      const ctx = canvas.getContext("2d");
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
 
-function launchConfetti() {
-  const canvas = document.getElementById("confetti");
-  const ctx = canvas.getContext("2d");
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+      const confetti = Array.from({ length: 100 }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 6 + 4,
+        d: Math.random() * 10 + 5,
+        color: `hsl(${Math.random() * 360}, 100%, 50%)`,
+      }));
 
-  const confetti = Array.from({ length: 100 }, () => ({
-    x: Math.random() * canvas.width,
-    y: Math.random() * canvas.height,
-    r: Math.random() * 6 + 4,
-    d: Math.random() * 10 + 5,
-    color: `hsl(${Math.random() * 360}, 100%, 50%)`,
-  }));
-
-  function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    confetti.forEach(p => {
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = p.color;
-      ctx.fill();
-    });
-    update();
-  }
-
-  function update() {
-    confetti.forEach(p => {
-      p.y += p.d;
-      if (p.y > canvas.height) {
-        p.y = 0;
-        p.x = Math.random() * canvas.width;
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        confetti.forEach(p => {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fillStyle = p.color;
+          ctx.fill();
+        });
+        update();
       }
-    });
-  }
 
-  setInterval(draw, 30);
-}
+      function update() {
+        confetti.forEach(p => {
+          p.y += p.d;
+          if (p.y > canvas.height) {
+            p.y = 0;
+            p.x = Math.random() * canvas.width;
+          }
+        });
+      }
 
-renderBoxes();
+      setInterval(draw, 30);
+    }
+
+    renderBoxes();
   </script>
 </body>
 </html>
+
